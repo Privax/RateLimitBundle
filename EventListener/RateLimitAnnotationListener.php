@@ -15,7 +15,6 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 class RateLimitAnnotationListener extends BaseListener
 {
-
     /**
      * @var eventDispatcherInterface
      */
@@ -32,16 +31,27 @@ class RateLimitAnnotationListener extends BaseListener
     protected $pathLimitProcessor;
 
     /**
-     * @param RateLimitService                    $rateLimitService
+     * @var ContainerInterface
+     */
+    protected $container;
+
+    /**
+     * RateLimitAnnotationListener constructor.
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param RateLimitService $rateLimitService
+     * @param PathLimitProcessor $pathLimitProcessor
+     * @param ContainerInterface $container
      */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         RateLimitService $rateLimitService,
-        PathLimitProcessor $pathLimitProcessor
+        PathLimitProcessor $pathLimitProcessor,
+        ContainerInterface $container
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->rateLimitService = $rateLimitService;
         $this->pathLimitProcessor = $pathLimitProcessor;
+        $this->container = $container;
     }
 
     /**
@@ -107,9 +117,10 @@ class RateLimitAnnotationListener extends BaseListener
 
     }
 
-
     /**
+     * @param Request $request
      * @param RateLimit[] $annotations
+     * @return RateLimit|null
      */
     protected function findBestMethodMatch(Request $request, array $annotations)
     {
@@ -136,6 +147,12 @@ class RateLimitAnnotationListener extends BaseListener
         return $best_match;
     }
 
+    /**
+     * @param FilterControllerEvent $event
+     * @param RateLimit $rateLimit
+     * @param RateLimit[] $annotations
+     * @return string
+     */
     private function getKey(FilterControllerEvent $event, RateLimit $rateLimit, array $annotations)
     {
         $request = $event->getRequest();
@@ -147,11 +164,19 @@ class RateLimitAnnotationListener extends BaseListener
             : get_class($controller[0]) . ':' . $controller[1];
 
         // Create an initial key by joining the methods and the alias
-        $key = $rateLimitMethods . ':' . $rateLimitAlias ;
+        $key = $rateLimitMethods . ':' . $rateLimitAlias;
 
         // Let listeners manipulate the key
         $keyEvent = new GenerateKeyEvent($event->getRequest(), $key);
         $this->eventDispatcher->dispatch(RateLimitEvents::GENERATE_KEY, $keyEvent);
+
+        // Apply all the key generators
+        $generators = $rateLimit->getGenerators();
+
+        foreach ($generators as $gen) {
+            $service = $this->container->get('noxlogic_rate_limit.generators.' . $gen);
+            $service->augmentKey($keyEvent);
+        }
 
         return $keyEvent->getKey();
     }

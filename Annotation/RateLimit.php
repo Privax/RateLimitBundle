@@ -27,6 +27,11 @@ class RateLimit extends ConfigurationAnnotation
     protected $period = 3600;
 
     /**
+     * @var array Key generators applied to the key when checking the limit.
+     */
+    protected $generators = array();
+
+    /**
      * Returns the alias name for an annotated configuration.
      *
      * @return string
@@ -92,5 +97,21 @@ class RateLimit extends ConfigurationAnnotation
     public function setPeriod($period)
     {
         $this->period = $period;
+    }
+
+    /**
+     * @return array
+     */
+    public function getGenerators()
+    {
+        return $this->generators;
+    }
+
+    /**
+     * @param $generators
+     */
+    public function setGenerators($generators)
+    {
+        $this->generators = $generators;
     }
 }
