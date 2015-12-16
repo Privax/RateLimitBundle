@@ -71,50 +71,60 @@ class RateLimitAnnotationListener extends BaseListener
 
         // Find the best match
         $annotations = $event->getRequest()->attributes->get('_x-rate-limit', array());
-        $rateLimit = $this->findBestMethodMatch($event->getRequest(), $annotations);
+        $rateLimits = $this->findApplicableLimits($event->getRequest, $annotations);
 
         // No matching annotation found
-        if (! $rateLimit) {
+        if (count($rateLimits) === 0) {
             return;
         }
 
-        $key = $this->getKey($event, $rateLimit, $annotations);
+        $lowestLimit = -1;
+        $lowestRateInfo = null;
+        foreach ($rateLimits as $rateLimit) {
+            $key = $this->getKey($event, $rateLimit, $annotations);
 
-        // Ratelimit the call
-        $rateLimitInfo = $this->rateLimitService->limitRate($key);
-        if (! $rateLimitInfo) {
-            // Create new rate limit entry for this call
-            $rateLimitInfo = $this->rateLimitService->createRate($key, $rateLimit->getLimit(), $rateLimit->getPeriod());
+            // Ratelimit the call
+            $rateLimitInfo = $this->rateLimitService->limitRate($key);
             if (! $rateLimitInfo) {
-                // @codeCoverageIgnoreStart
-                return;
-                // @codeCoverageIgnoreEnd
+                // Create new rate limit entry for this call
+                $rateLimitInfo = $this->rateLimitService->createRate($key, $rateLimit->getLimit(), $rateLimit->getPeriod());
+                if (! $rateLimitInfo) {
+                    // @codeCoverageIgnoreStart
+                    return;
+                    // @codeCoverageIgnoreEnd
+                }
+            }
+
+            $limit = $rateLimitInfo->getLimit() - $rateLimitInfo->getCalls();
+
+            if ($lowestLimit > $limit || $lowestLimit === -1) {
+                $lowestLimit = $limit;
+                $lowestRateInfo = $rateLimitInfo;
+            }
+
+            // When we exceeded our limit, return a custom error response
+            if ($rateLimitInfo->getCalls() > $rateLimitInfo->getLimit()) {
+                // Throw an exception if configured.
+                if ($this->getParameter('rate_response_exception')) {
+                    $class = $this->getParameter('rate_response_exception');
+                    throw new $class($this->getParameter('rate_response_message'), $this->getParameter('rate_response_code'));
+                }
+
+                $message = $this->getParameter('rate_response_message');
+                $code = $this->getParameter('rate_response_code');
+                $event->setController(function () use ($message, $code) {
+                    // @codeCoverageIgnoreStart
+                    return new Response($message, $code);
+                    // @codeCoverageIgnoreEnd
+                });
             }
         }
 
-
-        // Store the current rating info in the request attributes
-        $request = $event->getRequest();
-        $request->attributes->set('rate_limit_info', $rateLimitInfo);
-
-        // When we exceeded our limit, return a custom error response
-        if ($rateLimitInfo->getCalls() > $rateLimitInfo->getLimit()) {
-
-            // Throw an exception if configured.
-            if ($this->getParameter('rate_response_exception')) {
-                $class = $this->getParameter('rate_response_exception');
-                throw new $class($this->getParameter('rate_response_message'), $this->getParameter('rate_response_code'));
-            }
-
-            $message = $this->getParameter('rate_response_message');
-            $code = $this->getParameter('rate_response_code');
-            $event->setController(function () use ($message, $code) {
-                // @codeCoverageIgnoreStart
-                return new Response($message, $code);
-                // @codeCoverageIgnoreEnd
-            });
+        if (isset($lowestRateInfo)) {
+            // Store the current rating info in the request attributes
+            $request = $event->getRequest();
+            $request->attributes->set('rate_limit_info', $lowestRateInfo);
         }
-
     }
 
     /**
