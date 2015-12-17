@@ -131,6 +131,33 @@ class RateLimitAnnotationListener extends BaseListener
 
     /**
      * @param Request $request
+     * @param array $annotations
+     * @return array
+     */
+    protected function findApplicableLimits(Request $request, array $annotations)
+    {
+        $applicableAnnotations = array();
+        // Empty array, check the path limits
+        if (count($annotations) === 0) {
+            $applicableAnnotations[] = $this->pathLimitProcessor->getRateLimit($request);
+        }
+
+        foreach ($annotations as $annotation) {
+            // cast methods to array, even method holds a string
+            $methods = is_array($annotation->getMethods()) ?
+                $annotation->getMethods() :
+                array($annotation->getMethods());
+
+            if (count($methods) === 0 || in_array($request->getMethod(), $methods)) {
+                $applicableAnnotations[] = $annotation;
+            }
+        }
+
+        return $applicableAnnotations;
+    }
+
+    /**
+     * @param Request $request
      * @param RateLimit[] $annotations
      * @return RateLimit|null
      */
