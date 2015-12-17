@@ -117,6 +117,8 @@ class RateLimitAnnotationListener extends BaseListener
                     return new Response($message, $code);
                     // @codeCoverageIgnoreEnd
                 });
+
+                return;
             }
         }
 
