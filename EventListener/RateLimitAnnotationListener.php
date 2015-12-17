@@ -139,7 +139,11 @@ class RateLimitAnnotationListener extends BaseListener
         $applicableAnnotations = array();
         // Empty array, check the path limits
         if (count($annotations) === 0) {
-            $applicableAnnotations[] = $this->pathLimitProcessor->getRateLimit($request);
+            $limit = $this->pathLimitProcessor->getRateLimit($request);
+
+            if (isset($limit)) {
+                $applicableAnnotations[] = $limit;
+            }
         }
 
         foreach ($annotations as $annotation) {
