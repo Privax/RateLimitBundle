@@ -37,6 +37,7 @@
             <argument type="service" id="event_dispatcher" />
             <argument type="service" id="noxlogic_rate_limit.rate_limit_service" />
             <argument type="service" id="noxlogic_rate_limit.path_limit_processor" />
+            <argument type="service" id="service_container" />
 
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" priority="-10" />
 
