@@ -71,7 +71,7 @@ class RateLimitAnnotationListener extends BaseListener
 
         // Find the best match
         $annotations = $event->getRequest()->attributes->get('_x-rate-limit', array());
-        $rateLimits = $this->findApplicableLimits($event->getRequest, $annotations);
+        $rateLimits = $this->findApplicableLimits($event->getRequest(), $annotations);
 
         // No matching annotation found
         if (count($rateLimits) === 0) {
