@@ -10,6 +10,7 @@
         <parameter key="noxlogic_rate_limit.rate_limit_service.class">Noxlogic\RateLimitBundle\Service\RateLimitService</parameter>
         <parameter key="noxlogic_rate_limit.oauth_key_generate_listener.class">Noxlogic\RateLimitBundle\EventListener\OauthKeyGenerateListener</parameter>
         <parameter key="noxlogic_rate_limit.path_limit_processor.class">Noxlogic\RateLimitBundle\Util\PathLimitProcessor</parameter>
+        <parameter key="noxlogic_rate_limit.generators.ip.class">Noxlogic\RateLimitBundle\Generators\IpGenerator</parameter>
     </parameters>
 
     <services>
@@ -26,6 +27,10 @@
 
         <service id="noxlogic_rate_limit.path_limit_processor" class="%noxlogic_rate_limit.path_limit_processor.class%">
             <argument>%noxlogic_rate_limit.path_limits%</argument>
+        </service>
+
+        <service id="noxlogic_rate_limit.generators.ip" class="%noxlogic_rate_limit.generators.ip.class%">
+            <argument type="service" id="request_stack" />
         </service>
 
         <service id="noxlogic_rate_limit.rate_limit_annotation_listener" class="%noxlogic_rate_limit.rate_limit_annotation_listener.class%">
