@@ -10,7 +10,6 @@ use Noxlogic\RateLimitBundle\Service\Response\RateResponseService;
 use Noxlogic\RateLimitBundle\Util\PathLimitProcessor;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -119,11 +118,9 @@ class RateLimitAnnotationListener extends BaseListener
                     throw new $class($this->getParameter('rate_response_message'), $this->getParameter('rate_response_code'));
                 }
 
-                $message = $this->getParameter('rate_response_message');
-                $code = $this->getParameter('rate_response_code');
-                $event->setController(function () use ($message, $code) {
+                $event->setController(function () {
                     // @codeCoverageIgnoreStart
-                    return new Response($message, $code);
+                    return $this->responseService->getResponse();
                     // @codeCoverageIgnoreEnd
                 });
 
