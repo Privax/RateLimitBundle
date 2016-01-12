@@ -6,6 +6,7 @@ use Noxlogic\RateLimitBundle\Annotation\RateLimit;
 use Noxlogic\RateLimitBundle\Events\GenerateKeyEvent;
 use Noxlogic\RateLimitBundle\Events\RateLimitEvents;
 use Noxlogic\RateLimitBundle\Service\RateLimitService;
+use Noxlogic\RateLimitBundle\Service\Response\RateResponseService;
 use Noxlogic\RateLimitBundle\Util\PathLimitProcessor;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,22 +37,30 @@ class RateLimitAnnotationListener extends BaseListener
     protected $container;
 
     /**
+     * @var LimitResponseService
+     */
+    protected $responseService;
+
+    /**
      * RateLimitAnnotationListener constructor.
      * @param EventDispatcherInterface $eventDispatcher
      * @param RateLimitService $rateLimitService
      * @param PathLimitProcessor $pathLimitProcessor
      * @param ContainerInterface $container
+     * @param RateResponseService $responseService
      */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         RateLimitService $rateLimitService,
         PathLimitProcessor $pathLimitProcessor,
-        ContainerInterface $container
+        ContainerInterface $container,
+        RateResponseService $responseService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->rateLimitService = $rateLimitService;
         $this->pathLimitProcessor = $pathLimitProcessor;
         $this->container = $container;
+        $this->responseService = $responseService;
     }
 
     /**
