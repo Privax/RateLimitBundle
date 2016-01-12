@@ -2,7 +2,9 @@
 
 namespace Noxlogic\RateLimitBundle\Service\Response;
 
-class StringResponseService extends LimitResponseService
+use Symfony\Component\HttpFoundation\Response;
+
+class StringResponseService extends RateResponseService
 {
     public function getResponse()
     {
