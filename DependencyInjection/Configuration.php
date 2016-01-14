@@ -48,7 +48,7 @@ class Configuration implements ConfigurationInterface
                     ->info('The HTTP status code to return when a client hits the rate limit')
                 ->end()
                 ->scalarNode('rate_response_service')
-                    ->defaultValue('noxlogic_rate_limit.limit_response_service.string')
+                    ->defaultValue('noxlogic_rate_limit.rate_limit_handler_service')
                     ->info('Service for creating a response when a client hits the rate limit')
                 ->end()
                 ->scalarNode('rate_response_exception')

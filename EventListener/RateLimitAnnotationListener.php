@@ -6,7 +6,7 @@ use Noxlogic\RateLimitBundle\Annotation\RateLimit;
 use Noxlogic\RateLimitBundle\Events\GenerateKeyEvent;
 use Noxlogic\RateLimitBundle\Events\RateLimitEvents;
 use Noxlogic\RateLimitBundle\Service\RateLimitService;
-use Noxlogic\RateLimitBundle\Service\Response\RateResponseService;
+use Noxlogic\RateLimitBundle\LimitHandler\RateLimitHandler;
 use Noxlogic\RateLimitBundle\Util\PathLimitProcessor;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,6 +15,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class RateLimitAnnotationListener extends BaseListener
 {
+    /**
+     * @var \Noxlogic\RateLimitBundle\LimitHandler\RateLimitHandler
+     */
+    protected $rateLimitHandler;
+
     /**
      * @var eventDispatcherInterface
      */
@@ -31,35 +36,30 @@ class RateLimitAnnotationListener extends BaseListener
     protected $pathLimitProcessor;
 
     /**
-     * @var ContainerInterface
+     * @var Symfony\Component\DependencyInjection\ContainerInterface;
      */
     protected $container;
 
     /**
-     * @var LimitResponseService
-     */
-    protected $responseService;
-
-    /**
      * RateLimitAnnotationListener constructor.
+     * @param RateLimitHandler $rateLimitHandler
      * @param EventDispatcherInterface $eventDispatcher
      * @param RateLimitService $rateLimitService
      * @param PathLimitProcessor $pathLimitProcessor
      * @param ContainerInterface $container
-     * @param RateResponseService $responseService
      */
     public function __construct(
+        RateLimitHandler $rateLimitHandler,
         EventDispatcherInterface $eventDispatcher,
         RateLimitService $rateLimitService,
         PathLimitProcessor $pathLimitProcessor,
-        ContainerInterface $container,
-        RateResponseService $responseService
+        ContainerInterface $container
     ) {
+        $this->rateLimitHandler = $rateLimitHandler;
         $this->eventDispatcher = $eventDispatcher;
         $this->rateLimitService = $rateLimitService;
         $this->pathLimitProcessor = $pathLimitProcessor;
         $this->container = $container;
-        $this->responseService = $responseService;
     }
 
     /**
@@ -118,11 +118,10 @@ class RateLimitAnnotationListener extends BaseListener
                     throw new $class($this->getParameter('rate_response_message'), $this->getParameter('rate_response_code'));
                 }
 
-                $event->setController(function () {
-                    // @codeCoverageIgnoreStart
-                    return $this->responseService->getResponse();
-                    // @codeCoverageIgnoreEnd
-                });
+                $code = $this->getParameter('rate_response_code');
+                $message = $this->getParameter('rate_response_message');
+
+                $this->rateLimitHandler->handle($event, $key, $code, $message);
 
                 return;
             }

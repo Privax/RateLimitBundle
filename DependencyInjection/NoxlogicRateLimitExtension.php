@@ -56,6 +56,11 @@ class NoxlogicRateLimitExtension extends Extension
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
 
+        $container->getDefinition('noxlogic_rate_limit.rate_limit_annotation_listener')->replaceArgument(
+            0,
+            new Reference($config['rate_response_service'])
+        );
+
         switch ($config['storage_engine']) {
             case 'memcache':
                 $container->getDefinition('noxlogic_rate_limit.storage')->replaceArgument(

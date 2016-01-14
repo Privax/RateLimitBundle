@@ -11,7 +11,7 @@
         <parameter key="noxlogic_rate_limit.oauth_key_generate_listener.class">Noxlogic\RateLimitBundle\EventListener\OauthKeyGenerateListener</parameter>
         <parameter key="noxlogic_rate_limit.path_limit_processor.class">Noxlogic\RateLimitBundle\Util\PathLimitProcessor</parameter>
         <parameter key="noxlogic_rate_limit.generators.ip.class">Noxlogic\RateLimitBundle\Generators\IpGenerator</parameter>
-        <parameter key="noxlogic_rate_limit.rate_response_service.class">Noxlogic\RateLimitBundle\Service\Response\StringResponseService</parameter>
+        <parameter key="noxlogic_rate_limit.rate_limit_handler_service.class">Noxlogic\RateLimitBundle\LimitHandler\SimpleLimitHandler</parameter>
     </parameters>
 
     <services>
@@ -34,7 +34,17 @@
             <argument type="service" id="request_stack" />
         </service>
 
-        <service id="noxlogic_rate_limit.rate_response_service" class="%noxlogic_rate_limit.rate_response_service.class%">
+        <service id="noxlogic_rate_limit.rate_limit_handler_service" class="%noxlogic_rate_limit.rate_limit_handler_service.class%" />
+
+        <service id="noxlogic_rate_limit.rate_limit_annotation_listener" class="%noxlogic_rate_limit.rate_limit_annotation_listener.class%">
+            <argument type="service" id="noxlogic_rate_limit.rate_limit_handler_service" />
+            <argument type="service" id="event_dispatcher" />
+            <argument type="service" id="noxlogic_rate_limit.rate_limit_service" />
+            <argument type="service" id="noxlogic_rate_limit.path_limit_processor" />
+            <argument type="service" id="service_container" />
+
+            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" priority="-10" />
+
             <call method="setParameter">
                 <argument>rate_response_code</argument>
                 <argument>%noxlogic_rate_limit.rate_response_code%</argument>
@@ -43,17 +53,6 @@
                 <argument>rate_response_message</argument>
                 <argument>%noxlogic_rate_limit.rate_response_message%</argument>
             </call>
-        </service>
-
-        <service id="noxlogic_rate_limit.rate_limit_annotation_listener" class="%noxlogic_rate_limit.rate_limit_annotation_listener.class%">
-            <argument type="service" id="event_dispatcher" />
-            <argument type="service" id="noxlogic_rate_limit.rate_limit_service" />
-            <argument type="service" id="noxlogic_rate_limit.path_limit_processor" />
-            <argument type="service" id="service_container" />
-            <argument type="service" id="noxlogic_rate_limit.rate_response_service" />
-
-            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" priority="-10" />
-
             <call method="setParameter">
                 <argument>rate_response_exception</argument>
                 <argument>%noxlogic_rate_limit.rate_response_exception%</argument>
